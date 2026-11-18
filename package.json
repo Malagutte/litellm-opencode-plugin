@@ -1,6 +1,6 @@
 {
   "name": "litellm-opencode-plugin",
-  "version": "0.0.0-dev",
+  "version": "1.0.0-fa50de7",
   "description": "OpenCode plugin that shows LiteLLM spend and budget usage in the TUI footer",
   "type": "module",
   "exports": {
