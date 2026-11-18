@@ -105,12 +105,12 @@ published version — a publish step would need an explicit `--tag`.
 
 ### Squash merges
 
-`master` only receives squash merges (repository settings: allow *Squash merging* only, and require
+`main` only receives squash merges (repository settings: allow *Squash merging* only, and require
 linear history so no merge commits can land). That shapes the version checks:
 
 - **Pull requests**: CI checks the exact hash of the PR head commit, so run `npm run version:sync`
   before pushing to a branch.
-- **Master**: the squash commit is created by GitHub at merge time, so its hash cannot be known when
+- **`main`**: the squash commit is created by GitHub at merge time, so its hash cannot be known when
   the pull request is written. CI therefore only checks the `1.0.0-<hex>` shape there, and the
   committed version describes the commit the change was authored on — one commit behind `HEAD` by
   construction.
@@ -141,7 +141,7 @@ nothing touches the network or a real proxy.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to `master`/`main` and on every pull request, on the
+`.github/workflows/ci.yml` runs on every push to `main` and on every pull request, on the
 Node version in `.nvmrc`:
 
 1. version check — `version:check:exact` on pull requests, `version:check` on pushes (see above)

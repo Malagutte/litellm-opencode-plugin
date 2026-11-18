@@ -6,9 +6,9 @@
  *   npm run version:check        fail unless package.json is `1.0.0-<hex>` shaped
  *   npm run version:check:exact  fail unless it matches the current HEAD hash
  *
- * `--exact` matters because a squash merge on master creates a new commit at
+ * `--exact` matters because a squash merge on main creates a new commit at
  * merge time: the version committed in a pull request can only ever describe
- * the commit the change was authored on, so master checks the shape only.
+ * the commit the change was authored on, so the default branch checks the shape only.
  */
 
 import { execFileSync } from "node:child_process"
