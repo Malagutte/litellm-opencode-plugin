@@ -1,0 +1,43 @@
+{
+  "name": "litellm-opencode-plugin",
+  "version": "0.0.0-dev",
+  "description": "OpenCode plugin that shows LiteLLM spend and budget usage in the TUI footer",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tui": "./src/tui.tsx"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:package": "node scripts/check-package.mjs",
+    "version:print": "node scripts/version.mjs",
+    "version:sync": "node scripts/version.mjs --sync",
+    "version:check": "node scripts/version.mjs --check",
+    "version:check:exact": "node scripts/version.mjs --check --exact"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.8.4",
+    "@opentui/solid": ">=0.8.4",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@opencode/theme": "2.3.0",
+    "@opentui/core": "^0.8.4",
+    "@opentui/solid": "^0.8.4",
+    "@types/node": "^22.10.0",
+    "solid-js": "^1.9.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
