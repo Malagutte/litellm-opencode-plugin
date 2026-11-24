@@ -1,6 +1,6 @@
 {
   "name": "litellm-opencode-plugin",
-  "version": "1.0.0-6051b7d",
+  "version": "1.0.0-35dabef",
   "description": "OpenCode plugin that shows LiteLLM spend and budget usage in the TUI footer",
   "license": "MIT",
   "author": "Alysson Malagutte (https://github.com/Malagutte)",
