@@ -2,6 +2,24 @@
   "name": "litellm-opencode-plugin",
   "version": "1.0.0-426cf89",
   "description": "OpenCode plugin that shows LiteLLM spend and budget usage in the TUI footer",
+  "license": "MIT",
+  "author": "Alysson Malagutte (https://github.com/Malagutte)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Malagutte/litellm-opencode-plugin.git"
+  },
+  "homepage": "https://github.com/Malagutte/litellm-opencode-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/Malagutte/litellm-opencode-plugin/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "litellm",
+    "spend",
+    "budget",
+    "tui"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -10,7 +28,13 @@
   "files": [
     "src"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "next"
+  },
   "scripts": {
+    "prepublishOnly": "npm run typecheck && npm test && npm run check:package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -24,8 +48,8 @@
     "@opencode/plugin": "^2.3.0"
   },
   "peerDependencies": {
-    "@opentui/core": ">=0.8.4",
-    "@opentui/solid": ">=0.8.4",
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
     "solid-js": ">=1.9.0"
   },
   "devDependencies": {

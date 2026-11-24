@@ -1,0 +1,83 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Stable version to publish to latest, e.g. 1.0.0. Leave empty to publish a next build."
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  # Trusted publishing: npm exchanges this for a short-lived token, no NPM_TOKEN secret.
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # scripts/version.mjs reads the commit hash of HEAD.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Use a publish-capable npm
+        # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.
+        run: npm install --global npm@^11.5.1
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Check package contents
+        run: npm run check:package
+
+      - name: Resolve version and dist-tag
+        id: version
+        run: |
+          release="${{ inputs.release }}"
+
+          if [ -n "$release" ]; then
+            # A hand-typed stable version such as 1.0.0 becomes what a plain
+            # `npm install` resolves to.
+            version="$release"
+            tag=latest
+          else
+            # Every commit publishes 1.0.0-<short hash>: a semver pre-release,
+            # which never satisfies a ^1.0.0 range, so it is kept off latest.
+            version="$(node scripts/version.mjs)"
+            tag=next
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Publishing $version with --tag $tag"
+
+      - name: Publish
+        # The version is computed here instead of taken from the commit: after a
+        # squash merge the committed 1.0.0-<hash> always describes the parent
+        # commit, and the published tarball should carry its own hash.
+        run: |
+          npm version "${{ steps.version.outputs.version }}" \
+            --no-git-tag-version --allow-same-version
+          npm publish --tag "${{ steps.version.outputs.tag }}" --access public

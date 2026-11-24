@@ -75,7 +75,8 @@ src/spend/options.ts  plugin options and their defaults
 src/spend/json.ts     readers for untrusted JSON (config and network)
 tests/                vitest suite for every module above
 scripts/              version.mjs (version pattern), check-package.mjs (tarball guard)
-.github/workflows/    ci.yml: install, typecheck, test, package check
+.github/workflows/    ci.yml (checks), publish.yml (npm releases)
+LICENSE               MIT
 opencode.jsonc        loads the plugin from this repo while developing
 ```
 
@@ -100,8 +101,8 @@ npm run version:check:exact  # fail unless it matches the current HEAD hash
 ```
 
 `BASE_VERSION` lives in `scripts/version.mjs`; bump it (e.g. to `1.1.0`) in a pull request. The result
-is a semver pre-release, so `npm install litellm-opencode-plugin` will not resolve to it unless it is the only
-published version — a publish step would need an explicit `--tag`.
+is a semver pre-release: it never satisfies a `^1.0.0` range, so it is published under the `next`
+dist-tag and a stable release needs a version without the hash.
 
 ### Squash merges
 
@@ -160,6 +161,25 @@ Reproduce the whole thing locally:
 nvm use && npm ci && npm run typecheck && npm test && npm run check:package
 ```
 
+## Publishing
+
+`.github/workflows/publish.yml` runs manually (`workflow_dispatch`) and uses npm **trusted
+publishing** (OIDC): the job asks for `id-token: write` and npm exchanges it for a short-lived token,
+so there is no `NPM_TOKEN` secret to leak.
+
+| What it publishes | Dist-tag | How users install it |
+| --- | --- | --- |
+| `1.0.0-<short hash>` computed from `HEAD` at publish time | `next` | `npm install litellm-opencode-plugin@next` |
+| whatever you type in the `release` input, e.g. `1.0.0` | `latest` | `npm install litellm-opencode-plugin` |
+
+The version is written inside the job with `npm version --no-git-tag-version`, so the tarball carries
+its own commit hash and no bot commit lands on `main`. `prepublishOnly` re-runs typecheck, tests and
+the tarball guard, so a broken package cannot be published even by hand.
+
+One-time setup on npmjs.com: the package's *Settings → Trusted Publisher* → GitHub Actions, with
+repository `Malagutte/litellm-opencode-plugin`, workflow `publish.yml` and no environment. Until that
+entry exists, publish once by hand (`npm publish --access public --tag next`) and attach it afterwards.
+
 ## Develop locally
 
 1. `npm install`
@@ -169,7 +189,23 @@ nvm use && npm ci && npm run typecheck && npm test && npm run check:package
 
 Config and source are hot-reloaded; use `/reload` if something looks stale.
 
-## Use in another project
+## Install
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["litellm-opencode-plugin@next"],
+}
+```
+
+Published builds are pre-releases (`1.0.0-<short hash>`), so ask for `@next` or pin an exact version.
+A bare `litellm-opencode-plugin` only resolves once a stable version such as `1.0.0` has gone to
+`latest` (see [Publishing](#publishing)).
+
+Put the entry in the global `~/.config/opencode/opencode.json` to have the chip in every project, or
+in a project's `opencode.jsonc` to scope it. Config changes apply without a restart.
+
+### From a local checkout
 
 Point `plugins` at this directory, an absolute path, or a `file://` URL:
 
@@ -179,9 +215,6 @@ Point `plugins` at this directory, an absolute path, or a `file://` URL:
   "plugins": ["/home/me/git/litellm-opencode-plugin"],
 }
 ```
-
-After publishing to npm, the entry becomes `"litellm-opencode-plugin"` or `"litellm-opencode-plugin@1.0.0-<hash>"`. Add
-it to the global `~/.config/opencode/opencode.json` to have the chip everywhere.
 
 ## Troubleshooting
 
@@ -193,3 +226,7 @@ it to the global `~/.config/opencode/opencode.json` to have the chip everywhere.
 - **Stale number**: the proxy updates spend asynchronously; `/spend` forces a refresh.
 
 Docs: <https://opencode.ai/docs/build/plugins>
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). Not affiliated with, or endorsed by, LiteLLM or OpenCode.

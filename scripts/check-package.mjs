@@ -1,6 +1,7 @@
 /**
  * Guards the published tarball: the entrypoints the OpenCode plugin loader
- * resolves, and the sources they import, must actually be inside it.
+ * resolves, the sources they import, and the licence/readme npm users expect
+ * must actually be inside it.
  *
  * Run with `npm run check:package`. Exits non-zero with the missing paths.
  */
@@ -9,6 +10,8 @@ import { execFileSync } from "node:child_process"
 
 const REQUIRED_FILES = [
   "package.json",
+  "README.md",
+  "LICENSE",
   "src/index.ts",
   "src/tui.tsx",
   "src/spend/tracker.ts",
