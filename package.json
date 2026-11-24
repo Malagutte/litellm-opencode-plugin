@@ -30,7 +30,6 @@
   ],
   "publishConfig": {
     "access": "public",
-    "provenance": true,
     "tag": "next"
   },
   "scripts": {
