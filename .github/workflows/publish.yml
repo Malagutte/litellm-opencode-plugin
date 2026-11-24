@@ -77,7 +77,9 @@ jobs:
         # The version is computed here instead of taken from the commit: after a
         # squash merge the committed 1.0.0-<hash> always describes the parent
         # commit, and the published tarball should carry its own hash.
+        # --provenance also works from a laptop with npm 11; it is spelled out
+        # here because publishConfig.provenance breaks local publishes.
         run: |
           npm version "${{ steps.version.outputs.version }}" \
             --no-git-tag-version --allow-same-version
-          npm publish --tag "${{ steps.version.outputs.tag }}" --access public
+          npm publish --tag "${{ steps.version.outputs.tag }}" --access public --provenance
