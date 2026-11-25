@@ -12,8 +12,9 @@ normally, warning from `warningPercent` (default 80), error at 100% or when Lite
 
 ## What it does
 
-- **Footer chip** in `prompt.footer.status` (sessions) and `home.footer.status` (home), next to
-  OpenCode's own status indicators.
+- **Terminal**: footer chip in `prompt.footer.status` (sessions) and `home.footer.status` (home),
+  next to OpenCode's own status indicators.
+- **Desktop**: a pill above the composer showing the same number, and the same `/spend` command.
 - **`/spend` command** (also in the command palette as "LLM spend") opens a dialog with spend,
   budget, remaining, window, reset date, key alias, state and last update.
 - **Follows your model**: it reads the provider of the model selected in the prompt, so switching
@@ -66,13 +67,17 @@ All optional; passed in the object form of the `plugins` entry in `opencode.json
 ## Layout
 
 ```
-src/index.ts          server part: inert, loads the package through `plugins`
+src/index.ts          server part: serves SpendRpc.read, hides the virtual key
+src/rpc.ts            SpendRpc: the contract between the server part and its clients
 src/tui.tsx           TUI part: renders the chip, registers /spend, decides when to refresh
-src/spend/tracker.ts  reactive chip state + refresh rules (no JSX)
+src/gui.ts            Desktop part: composer pill + /spend, a thin SpendRpc client
+src/spend/chip.ts     shared core: provider -> chip text, level and dialog body
+src/spend/tracker.ts  the TUI's reactive chip and refresh rules (no JSX)
 src/spend/key-info.ts which proxy and key to use, the /key/info call, error kinds
 src/spend/usage.ts    /key/info body -> snapshot, snapshot -> chip and dialog text
 src/spend/options.ts  plugin options and their defaults
 src/spend/json.ts     readers for untrusted JSON (config and network)
+vite.config.ts        builds the Desktop bundle
 tests/                vitest suite for every module above
 scripts/              version.mjs (version pattern), check-package.mjs (tarball guard)
 .github/workflows/    ci.yml (checks), publish.yml (npm releases)
@@ -80,13 +85,20 @@ LICENSE               MIT
 opencode.jsonc        loads the plugin from this repo while developing
 ```
 
-The package exports both parts:
+The package exports every part:
 
 ```json
-"exports": { ".": "./src/index.ts", "./tui": "./src/tui.tsx" }
+"exports": {
+  ".": "./src/index.ts",
+  "./tui": "./src/tui.tsx",
+  "./rpc": "./src/rpc.ts",
+  "./gui-experimental": "./dist/gui-experimental.cjs"
+}
 ```
 
-OpenCode loads TypeScript and TSX directly, so there is no build step. `npm run typecheck` runs
+The terminal and server parts are TypeScript that OpenCode loads directly. The Desktop part is the
+one generated artifact: the app loads no TypeScript, so `npm run build:gui` writes the CommonJS
+bundle that `./gui-experimental` points at. Build it once after cloning; `npm run typecheck` runs
 `tsc --noEmit` for editor/type safety only.
 
 ## Versioning
@@ -135,6 +147,7 @@ npm run test:watch # watch mode
 | `tests/options.test.ts` | defaults, trimming, clamping (refresh interval, warning percent, format) |
 | `tests/key-info.test.ts` | proxy-root normalisation, target resolution, HTTP status → error kind, abort passthrough, quiet-vs-visible predicate |
 | `tests/usage.test.ts` | `/key/info` parsing (wrapped/unwrapped, soft budget, blocked, no budget, thresholds) and chip/dialog formatting |
+| `tests/chip.test.ts` | the shared core: provider choice, pinned option, snapshot→chip text/level, failure keeping the last good number, quiet non-LiteLLM providers |
 | `tests/tracker.test.ts` | provider selection (selected model vs pinned), format option, success/failure transitions, quiet failures, dispose, cancellation of a superseded refresh |
 
 The tracker tests use a fake TUI context (`tests/support/fake-context.ts`) and a stubbed `fetch`, so
@@ -147,10 +160,12 @@ Node version in `.nvmrc`:
 
 1. version check — `version:check:exact` on pull requests, `version:check` on pushes (see above)
 2. `npm ci`
-3. `npm run typecheck`
-4. `npm test`
-5. `npm run check:package` — packs the tarball in dry-run mode and fails when an entrypoint
-   (`src/index.ts`, `src/tui.tsx`, the modules behind them) would not ship.
+3. `npm run build:gui` — writes `dist/gui-experimental.cjs`, the Desktop bundle
+4. `npm run typecheck`
+5. `npm test`
+6. `npm run check:package` — packs the tarball in dry-run mode and fails when an entrypoint
+   (`src/index.ts`, `src/tui.tsx`, `dist/gui-experimental.cjs`, the modules behind them) would not
+   ship.
 
 Pull requests are checked out at `github.event.pull_request.head.sha` instead of the merge commit,
 otherwise the exact version check could never pass; a push is checked out normally.
@@ -183,11 +198,26 @@ entry exists, publish once by hand (`npm publish --access public --tag next`) an
 ## Develop locally
 
 1. `npm install`
-2. Run OpenCode in this repo — `opencode.jsonc` already loads `./`.
-3. Select a model served through your LiteLLM proxy; the chip appears in the prompt footer and
-   `/spend` opens the detail dialog.
+2. `npm run build:gui` — the Desktop part is a prebuilt bundle; `npm run build:gui -- --watch`
+   rebuilds it on every save and reloads it in the running app
+3. Run OpenCode in this repo — `opencode.jsonc` already loads `./`.
+4. Select a model served through your LiteLLM proxy; the chip appears in the prompt footer (terminal)
+   or as a pill above the composer (Desktop), and `/spend` opens the detail dialog.
 
-Config and source are hot-reloaded; use `/reload` if something looks stale.
+Server and terminal code is hot-reloaded; use `/reload` if something looks stale.
+
+## Desktop
+
+The Desktop app loads only the GUI part, so the terminal chip never appears there — that is why the
+package ships `./gui-experimental` (built by `vite.config.ts` into `dist/gui-experimental.cjs`).
+
+- The pill sits above the composer and follows the model of the session you are in.
+- `/spend` opens the app's own dialog with the same body the terminal shows.
+- The window never sees the virtual key: it calls `SpendRpc.read` and the **server part** does the
+  provider lookup and the `/key/info` request.
+- The plugin is listed under *Settings → Extensions → Plugins*, where it can be switched off.
+- A local directory needs `dist/gui-experimental.cjs` to exist before the app loads it, hence step 2
+  above; an installed package gets it from the tarball.
 
 ## Install
 
@@ -220,6 +250,8 @@ Point `plugins` at this directory, an absolute path, or a `file://` URL:
 
 - **No chip**: the selected provider exposes no `baseURL`/`apiKey`, or its `<root>/key/info` is not
   a LiteLLM endpoint. Run `/spend` for the exact reason.
+- **No pill in Desktop**: check *Settings → Extensions → Plugins* — a local checkout without
+  `dist/gui-experimental.cjs` (`npm run build:gui`) has nothing for the app to load.
 - **`LLM –`**: the lookup broke — proxy unreachable, revoked key, or an unexpected reply. Run
   `/spend` for the message.
 - **No percentage**: the key has no `max_budget` in LiteLLM.

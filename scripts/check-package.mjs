@@ -19,6 +19,10 @@ const REQUIRED_FILES = [
   "src/spend/usage.ts",
   "src/spend/options.ts",
   "src/spend/json.ts",
+  "src/spend/chip.ts",
+  "src/rpc.ts",
+  "src/gui.ts",
+  "dist/gui-experimental.cjs",
 ]
 
 const output = execFileSync("npm", ["pack", "--dry-run", "--json"], { encoding: "utf8" })

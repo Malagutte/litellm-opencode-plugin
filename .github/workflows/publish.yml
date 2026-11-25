@@ -43,6 +43,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Build Desktop bundle
+        run: npm run build:gui
+
       - name: Typecheck
         run: npm run typecheck
 
