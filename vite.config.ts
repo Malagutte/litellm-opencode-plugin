@@ -6,5 +6,5 @@ import { gui } from "@opencode/plugin/gui/vite"
  * The Desktop app loads no TypeScript, so this is the only generated artifact.
  */
 export default defineConfig({
-  plugins: [gui({ entry: "src/gui.ts", outFile: "dist/gui-experimental.cjs" })],
+  plugins: [gui({ entry: "src/gui.tsx", outFile: "dist/gui-experimental.cjs" })],
 })

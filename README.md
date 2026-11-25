@@ -14,7 +14,8 @@ normally, warning from `warningPercent` (default 80), error at 100% or when Lite
 
 - **Terminal**: footer chip in `prompt.footer.status` (sessions) and `home.footer.status` (home),
   next to OpenCode's own status indicators.
-- **Desktop**: a pill above the composer showing the same number, and the same `/spend` command.
+- **Desktop**: a button in the session header, beside the context toggle, showing the same number and
+  opening the same `/spend` details.
 - **`/spend` command** (also in the command palette as "LLM spend") opens a dialog with spend,
   budget, remaining, window, reset date, key alias, state and last update.
 - **Follows your model**: it reads the provider of the model selected in the prompt, so switching
@@ -70,7 +71,7 @@ All optional; passed in the object form of the `plugins` entry in `opencode.json
 src/index.ts          server part: serves SpendRpc.read, hides the virtual key
 src/rpc.ts            SpendRpc: the contract between the server part and its clients
 src/tui.tsx           TUI part: renders the chip, registers /spend, decides when to refresh
-src/gui.ts            Desktop part: composer pill + /spend, a thin SpendRpc client
+src/gui.tsx           Desktop part: session-header button + /spend, a thin SpendRpc client
 src/spend/chip.ts     shared core: provider -> chip text, level and dialog body
 src/spend/tracker.ts  the TUI's reactive chip and refresh rules (no JSX)
 src/spend/key-info.ts which proxy and key to use, the /key/info call, error kinds
@@ -211,7 +212,8 @@ Server and terminal code is hot-reloaded; use `/reload` if something looks stale
 The Desktop app loads only the GUI part, so the terminal chip never appears there — that is why the
 package ships `./gui-experimental` (built by `vite.config.ts` into `dist/gui-experimental.cjs`).
 
-- The pill sits above the composer and follows the model of the session you are in.
+- The button sits in the session header, next to the app's context toggle. It follows the model of the
+  session you are in; when the header is compact it becomes an icon with the number as its tooltip.
 - `/spend` opens the app's own dialog with the same body the terminal shows.
 - The window never sees the virtual key: it calls `SpendRpc.read` and the **server part** does the
   provider lookup and the `/key/info` request.
@@ -250,7 +252,7 @@ Point `plugins` at this directory, an absolute path, or a `file://` URL:
 
 - **No chip**: the selected provider exposes no `baseURL`/`apiKey`, or its `<root>/key/info` is not
   a LiteLLM endpoint. Run `/spend` for the exact reason.
-- **No pill in Desktop**: check *Settings → Extensions → Plugins* — a local checkout without
+- **No button in Desktop**: check *Settings → Extensions → Plugins* — a local checkout without
   `dist/gui-experimental.cjs` (`npm run build:gui`) has nothing for the app to load.
 - **`LLM –`**: the lookup broke — proxy unreachable, revoked key, or an unexpected reply. Run
   `/spend` for the message.

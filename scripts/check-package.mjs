@@ -21,7 +21,7 @@ const REQUIRED_FILES = [
   "src/spend/json.ts",
   "src/spend/chip.ts",
   "src/rpc.ts",
-  "src/gui.ts",
+  "src/gui.tsx",
   "dist/gui-experimental.cjs",
 ]
 
